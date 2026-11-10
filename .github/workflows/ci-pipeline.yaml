@@ -22,11 +22,6 @@ on:
         required: false
         type: boolean
         default: true
-      run sonarqube:
-        description: "Run SonarQube analysis"
-        required: false
-        type: boolean
-        default: true
       run_publish_ghcr:
         description: "Publish Docker image to GitHub Container Registry"
         required: false
