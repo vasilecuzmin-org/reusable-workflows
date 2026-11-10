@@ -2,6 +2,11 @@ name: Deploy to Kubernetes using kubectl
 on:
     workflow_call:
         inputs:
+            ENVIRONMENT:
+                description: "Deployment environment (e.g., dev, staging, prod)"
+                required: true
+                default: "dev"
+                type: string
             NAMESPACE:
                 description: "Kubernetes namespace to deploy to"
                 required: true
@@ -19,6 +24,7 @@ on:
                     type: string
 jobs:
     deploy:
+        environment: ${{ inputs.ENVIRONMENT }}
         env:
             NAMESPACE: ${{ inputs.NAMESPACE }}
         runs-on: [self-hosted, arc-demo, X64]
