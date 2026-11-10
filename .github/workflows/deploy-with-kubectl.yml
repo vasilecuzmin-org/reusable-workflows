@@ -1,0 +1,55 @@
+name: Deploy to Kubernetes using kubectl
+on:
+    workflow_call:
+        inputs:
+            NAMESPACE:
+                description: "Kubernetes namespace to deploy to"
+                required: true
+                default: "default"
+                type: string
+            IMAGE_NAME:
+                description: "Docker image name to deploy - without tag, e.g., myrepo/myimage"
+                required: true
+                default: "latest"
+                type: string
+            secrets:
+                KUBECONFIG:
+                    description: "Kubeconfig file content"
+                    required: true
+                    type: string
+jobs:
+    deploy:
+        env:
+            NAMESPACE: ${{ inputs.NAMESPACE }}
+        runs-on: [self-hosted, arc-demo, X64]
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+            - name: Set up kubectl
+              uses: azure/setup-kubectl@v3
+            - name: Configure KubeConfig
+              run: |
+                  mkdir -p ~/.kube
+                  echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+                  kubectl version
+                  kubectl get nodes
+            - name: install yq
+              run: |
+                  sudo curl -L https://github.com/mikefarah/yq/releases/download/v4.30.8/yq_linux_amd64 -o /usr/local/bin/yq
+                  sudo chmod +x /usr/local/bin/yq
+                  yq --version
+            - name: Update deployment image
+              run: |
+                  IMAGE_TAGS="${{ github.run_id }} - ${GITHUB_SHA::7}"
+                  export IMAGE="${{ inputs.IMAGE_NAME }}:${IMAGE_TAGS}"
+                  yq e '.spec.template.spec.containers[0].image = strenv(IMAGE)' -i k8s/deployment.yaml
+            - name: Create namespace if it doesn't exist
+              run: |
+                  kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
+            - name: Deploy to Kubernetes
+              run: |
+                  kubectl apply -f k8s/* -n $NAMESPACE
+            - name: Verify deployment
+              run: |
+                  kubectl rollout status deployment/app-py -n $NAMESPACE
+                  kubectl get pods -n $NAMESPACE
