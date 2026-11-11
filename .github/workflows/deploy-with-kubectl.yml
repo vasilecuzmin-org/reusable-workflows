@@ -7,11 +7,6 @@ on:
                 required: true
                 default: "dev"
                 type: string
-            NAMESPACE:
-                description: "Kubernetes namespace to deploy to"
-                required: true
-                default: "default"
-                type: string
             IMAGE_NAME:
                 description: "Docker image name to deploy - without tag, e.g., myrepo/myimage"
                 required: true
@@ -26,7 +21,7 @@ jobs:
     deploy:
         environment: ${{ inputs.ENVIRONMENT }}
         env:
-            NAMESPACE: ${{ inputs.NAMESPACE }}
+            NAMESPACE: ${{ vars.NAMESPACE }}
         runs-on: [self-hosted, arc-demo, X64]
         steps:
             - name: Checkout code
